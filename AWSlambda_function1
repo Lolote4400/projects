@@ -1,0 +1,61 @@
+import json
+import boto3
+client = boto3.client('dynamodb')
+
+def lambda_handler(event, context):
+    first = event['firstName']
+    last = event['lastName']
+    email = event['email']
+
+    name = first +' '+ last
+    print("hello world")
+
+  
+    response = client.get_item(
+        TableName='client',
+        Key={
+            'email': {'S': email}
+        }
+    )
+
+       
+    if "Item" not in response:
+
+        client.put_item(
+            TableName='client',
+            Item={
+                'email': {'S': email},
+                'firstName': {'S': first},
+                'lastName': {'S': last},
+            }
+        )
+
+        message = f"Bonjour {first} {last}. Vous êtes maintenant inscrit à la newsletter"
+        return {
+            'statusCode': 200,
+            'headers': {"Content-Type": "application/json; charset=utf-8"},
+            'body': json.dumps(message, ensure_ascii=False)
+        }
+
+    
+    existing = response["Item"]
+    existing_first = existing["firstName"]["S"]
+    existing_last = existing["lastName"]["S"]
+
+    
+    if existing_first == first and existing_last == last:
+        message = f"Bonjour {first} {last}. Votre adresse email est déjà enregistrée."
+        return {
+            'statusCode': 200,
+            'headers': {"Content-Type": "application/json; charset=utf-8"},
+            'body': json.dumps(message, ensure_ascii=False)
+        }
+
+    
+    else:
+        message = "Cette adresse email est déjà utilisée pour un autre compte"
+        return {
+            'statusCode': 200,
+            'headers': {"Content-Type": "application/json; charset=utf-8"},
+            'body': json.dumps(message, ensure_ascii=False)
+        }
