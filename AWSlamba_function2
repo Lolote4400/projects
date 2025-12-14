@@ -1,0 +1,23 @@
+import boto3
+
+TOPIC_ARN = "arn:aws:sns:eu-west-3:075834873344:message"
+sns = boto3.client('sns')
+
+def lambda_handler(event, context):
+    print("Event reçu :", event)
+    for record in event['Records']:
+        if record['eventName'] == 'INSERT':
+            new_item = record['dynamodb']['NewImage']
+            firstName = new_item.get('firstName', {}).get('S', 'N/A')
+            lastName = new_item.get('lastName', {}).get('S', 'N/A')
+            email = new_item.get('email', {}).get('S', 'N/A')
+
+            message = f"Nouvel utilisateur ajouté :\nPrénom : {firstName}\nNom : {lastName}\nEmail : {email}"
+            print("Message SNS :", message)
+
+            sns.publish(
+                TopicArn=TOPIC_ARN,
+                Subject="Nouvelle entrée dans DynamoDB",
+                Message=message
+            )
+    return {"status": "OK"}
